@@ -60,7 +60,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		// the layouting container for this widget
 		// the container must use the provided id
 		FContainer cnt = new FContainer(id);
-
+//lalala
 		// now we can add other components to the container
 		// the simplest is to add them line by line
 
