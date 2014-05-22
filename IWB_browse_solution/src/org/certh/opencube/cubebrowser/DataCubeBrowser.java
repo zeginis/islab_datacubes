@@ -46,7 +46,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 
 	public static class Config {
 		@ParameterConfigDoc(desc = "The types for which the wizard generates data")
-		public String labelText;
+		public String labelText;		
 	}
 
 	@Override
