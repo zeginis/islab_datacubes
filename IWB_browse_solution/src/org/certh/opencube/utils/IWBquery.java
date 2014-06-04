@@ -1,10 +1,9 @@
 package org.certh.opencube.utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.MalformedQueryException;
@@ -25,7 +24,8 @@ public class IWBquery {
 				.createTupleQuery(query);
 
 		TupleQueryResult res = null;
-
+		System.out.println(query);
+		long startTime = System.currentTimeMillis();
 		try {
 			TupleQuery tulpequery = queryBuilder.build(dm);
 			res = tulpequery.evaluate();
@@ -37,25 +37,33 @@ public class IWBquery {
 			e.printStackTrace();
 		}
 
+		long stopTime = System.currentTimeMillis();
+		long elapsedTime = stopTime - startTime;
+		System.out.println("Time: " + elapsedTime);
+
 		return res;
 	}
 
-	public static List<String> getDataCubeDimensions(String dataCubeURI) {
+	public static List<LDResource> getDataCubeDimensions(String dataCubeURI) {
 
-		String getCubeDimensions_query = "select  distinct ?dim where {"
+		String getCubeDimensions_query = "select  distinct ?dim ?label where {"
 				+ dataCubeURI
 				+ " <http://purl.org/linked-data/cube#structure> ?dsd."
 				+ "?dsd <http://purl.org/linked-data/cube#component>  ?cs."
-				+ "?cs <http://purl.org/linked-data/cube#dimension>  ?dim.}";
+				+ "?cs <http://purl.org/linked-data/cube#dimension>  ?dim."
+				+ "OPTIONAL {?dim <http://www.w3.org/2000/01/rdf-schema#label> ?label}}";
 
 		TupleQueryResult res = executeSelect(getCubeDimensions_query);
-
-		List<String> cubeDimensions = new ArrayList<String>();
+		List<LDResource> cubeDimensions = new ArrayList<LDResource>();
 
 		try {
 			while (res.hasNext()) {
 				BindingSet bindingSet = res.next();
-				cubeDimensions.add(bindingSet.getValue("dim").stringValue());
+				LDResource ldr = new LDResource(bindingSet.getValue("dim").stringValue());
+				if (bindingSet.getValue("label") != null) {
+					ldr.setLabel(bindingSet.getValue("label").stringValue());
+				}
+				cubeDimensions.add(ldr);
 			}
 		} catch (QueryEvaluationException e) {
 			e.printStackTrace();
@@ -65,13 +73,13 @@ public class IWBquery {
 
 	public static List<String> getDataCubeMeasure(String dataCubeURI) {
 
-		String getCubeDimensions_query = "select  distinct ?dim where {"
+		String getCubeMeasure_query = "select  distinct ?dim where {"
 				+ dataCubeURI
 				+ " <http://purl.org/linked-data/cube#structure> ?dsd."
 				+ "?dsd <http://purl.org/linked-data/cube#component>  ?cs."
 				+ "?cs <http://purl.org/linked-data/cube#measure>  ?dim.}";
 
-		TupleQueryResult res = executeSelect(getCubeDimensions_query);
+		TupleQueryResult res = executeSelect(getCubeMeasure_query);
 
 		List<String> cubeMeasure = new ArrayList<String>();
 
@@ -93,16 +101,15 @@ public class IWBquery {
 				+ dimensionURI
 				+ "> ?value."
 				+ "OPTIONAL {?value <http://www.w3.org/2000/01/rdf-schema#label> ?label}}";
-		System.out.println(getDimensionValues_query);
-		TupleQueryResult res = executeSelect(getDimensionValues_query);
 
+		TupleQueryResult res = executeSelect(getDimensionValues_query);
 		List<LDResource> dimensionValues = new ArrayList<LDResource>();
 
 		try {
 			while (res.hasNext()) {
 				BindingSet bindingSet = res.next();
 				LDResource resource = new LDResource();
-				
+
 				Value label = bindingSet.getValue("label");
 				if (label != null) {
 					resource.setLabel(label.stringValue());
@@ -113,18 +120,19 @@ public class IWBquery {
 		} catch (QueryEvaluationException e) {
 			e.printStackTrace();
 		}
+		Collections.sort(dimensionValues);
 		return dimensionValues;
 	}
 
 	public static TupleQueryResult get2DVisualsiationValues(
-			Set<String> visualDims,
-			HashMap<String, List<LDResource>> fixedDims, List<String> measures,
+			List<LDResource> visualDims,
+			HashMap<LDResource, LDResource> fixedDims, List<String> measures,
 			String cubeURI) {
 
 		String sparql_query = "Select ";
 		int i = 1;
 		// Add variables ?dim to SPARQL query
-		for (String vDim : visualDims) {
+		for (LDResource vDim : visualDims) {
 			sparql_query += "?dim" + i + " ";
 			i++;
 		}
@@ -135,21 +143,22 @@ public class IWBquery {
 
 		i = 1;
 		// Add free dimensions to where clause
-		for (String vDim : visualDims) {
-			sparql_query += "?obs <" + vDim + "> " + "?dim" + i + ". ";
+		for (LDResource vDim : visualDims) {
+			sparql_query += "?obs <" + vDim.getURI() + "> " + "?dim" + i + ". ";
 			i++;
 		}
 
 		// Add fixed dimensions to where clause, select the first value of the
 		// list of all values
-		for (String fDim : fixedDims.keySet()) {
-			sparql_query += "?obs <" + fDim + "> <"
-					+ fixedDims.get(fDim).get(0).getURI() + ">.";
+		for (LDResource fDim : fixedDims.keySet()) {
+			sparql_query += "?obs <" + fDim.getURI() + "> <"
+					+ fixedDims.get(fDim).getURI() + ">.";
 		}
 
 		sparql_query += "?obs  <" + measures.get(0) + "> ?measure}";
-		System.out.println(sparql_query);
-		return executeSelect(sparql_query);
+		TupleQueryResult res = executeSelect(sparql_query);
+
+		return res;
 
 	}
 
