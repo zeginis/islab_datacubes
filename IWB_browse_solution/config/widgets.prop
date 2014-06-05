@@ -1,1 +1,2 @@
 DataCubeBrowser=org.certh.opencube.cubebrowser.DataCubeBrowser
+MapView=org.certh.opencube.mapview.MapView

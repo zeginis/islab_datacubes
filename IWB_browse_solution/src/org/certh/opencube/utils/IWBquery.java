@@ -138,7 +138,7 @@ public class IWBquery {
 		}
 
 		// Select observations of a specific cube (cubeURI)
-		sparql_query += "?measure where{ ?obs <http://purl.org/linked-data/cube#dataSet> "
+		sparql_query += "?measure ?obs where{ ?obs <http://purl.org/linked-data/cube#dataSet> "
 				+ cubeURI + ".";
 
 		i = 1;
