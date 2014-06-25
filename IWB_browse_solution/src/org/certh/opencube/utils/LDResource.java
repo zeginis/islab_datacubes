@@ -1,17 +1,26 @@
 package org.certh.opencube.utils;
 
 public class LDResource implements Comparable {
+	
+	private String URI;
+	private String label;
+	
 	public LDResource() {
 		super();
 	}
 
 	public LDResource(String uRI) {
-		super();
 		URI = uRI;
 	}
+	
+	public LDResource(String uRI,String label) {
+		URI = uRI;
+		if(label!=null){
+			this.label=label;
+		}
+	}
 
-	private String URI;
-	private String label;
+
 
 	public String getURI() {
 		return URI;
@@ -59,6 +68,11 @@ public class LDResource implements Comparable {
 		}
 	
 		return false;
+	}
+	
+	public int hashCode(){
+		return URI.hashCode();
+		
 	}
 	
 

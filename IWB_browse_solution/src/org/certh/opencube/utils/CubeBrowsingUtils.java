@@ -3,6 +3,11 @@ package org.certh.opencube.utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class CubeBrowsingUtils {
 
@@ -11,15 +16,38 @@ public class CubeBrowsingUtils {
 	 * values for these dimensions
 	 */
 	public static HashMap<LDResource, List<LDResource>> getDimsValues(
-			List<LDResource> dimensions) {
+			List<LDResource> dimensions, String cubeURI,boolean useCodeLists,String SPARQLservice) {
+
+		//Create an executor to hold all threads
+		ExecutorService executor = Executors.newFixedThreadPool(dimensions.size());
+		List<Future<HashMap<LDResource, List<LDResource>>>> list = new ArrayList<Future<HashMap<LDResource, List<LDResource>>>>();
+		
+		//Create one thread for each dimension
+		for (final LDResource vRes : dimensions) {
+			Callable<HashMap<LDResource, List<LDResource>>> worker = new DimensionValuesThread(
+					vRes, cubeURI,useCodeLists,SPARQLservice);
+			Future<HashMap<LDResource, List<LDResource>>> submit = executor
+					.submit(worker);
+			list.add(submit);
+
+		}
+
+		// Retrieve the results from all threads
 		HashMap<LDResource, List<LDResource>> dimensionsAndValues = new HashMap<LDResource, List<LDResource>>();
 
-		for (LDResource vRes : dimensions) {
-
-			List<LDResource> vDimValues = IWBquery.getDimensionValues(vRes
-					.getURI());
-			dimensionsAndValues.put(vRes, vDimValues);
+		for (Future<HashMap<LDResource, List<LDResource>>> future : list) {
+			try {
+				HashMap<LDResource, List<LDResource>> dimVaulesHashMap = future
+						.get();
+				dimensionsAndValues.putAll(dimVaulesHashMap);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
 		}
+
+		executor.shutdown();
 
 		return dimensionsAndValues;
 
@@ -36,6 +64,32 @@ public class CubeBrowsingUtils {
 		// If there exist at least 2 dimensions
 		List<LDResource> visualDimensions = null;
 		if (allDimensions.size() > 1) {
+			visualDimensions=new ArrayList<LDResource>(2);
+			
+			//find dimension with most values
+			LDResource dim1 = allDimensions.get(0);
+			for(LDResource ldr:allDimensions){
+				int dim1NumberOfValues = allDimensionsValues.get(dim1).size();
+				int lrdNumberOfValues = allDimensionsValues.get(ldr).size();
+				if(lrdNumberOfValues>dim1NumberOfValues){
+					dim1=ldr;
+				}
+			}
+			
+			allDimensions.remove(dim1);
+			//find 2nd dimension with most values
+			LDResource dim2 = allDimensions.get(0);
+			for(LDResource ldr:allDimensions){
+				int dim2NumberOfValues = allDimensionsValues.get(dim2).size();
+				int lrdNumberOfValues = allDimensionsValues.get(ldr).size();
+				if(lrdNumberOfValues>dim2NumberOfValues){
+					dim2=ldr;
+				}
+			}
+			
+			visualDimensions.add(dim2);
+			visualDimensions.add(dim1);
+			/*
 			visualDimensions = new ArrayList<LDResource>(allDimensions.subList(
 					0, 2));
 			int dim1NumberOfValues = allDimensionsValues.get(
@@ -49,7 +103,7 @@ public class CubeBrowsingUtils {
 				LDResource dim1 = visualDimensions.get(0);
 				visualDimensions.set(0, visualDimensions.get(1));
 				visualDimensions.set(1, dim1);
-			}
+			}*/
 		} else { // If there is only one dimension
 			visualDimensions = allDimensions;
 		}
@@ -87,14 +141,5 @@ public class CubeBrowsingUtils {
 		return fixedDimSelectedValues;
 
 	}
-
-	/*
-	 * 
-	 * public static HashMap<String, Integer> getListIndexMap(List<LDResource>
-	 * dim){ HashMap<String, Integer> listIndex=new HashMap<String, Integer>();
-	 * int i=0; for(LDResource ldr:dim){ listIndex.put(ldr.getURI(),i); i++; }
-	 * 
-	 * return listIndex; }
-	 */
 
 }
