@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.openrdf.model.util.LiteralUtil;
 import org.openrdf.query.BindingSet;
@@ -34,7 +39,11 @@ public class IWBquery {
 	// VIRTUOSO
 	// private static String service_url="<http://localhost:8890/sparql>";
 
-	// Execute a SPARQL select
+	// Execute a SPARQL select using the native IWB triple store
+	//Input: the query to execute
+	private static boolean globalDSD=true;
+	private static boolean notime=false;
+	
 	public static TupleQueryResult executeSelect(String query) {
 		ReadDataManager dm = EndpointImpl.api().getDataManager();
 		QueryBuilder<TupleQuery> queryBuilder = QueryBuilder
@@ -61,7 +70,8 @@ public class IWBquery {
 		return res;
 	}
 
-	// Execute a SPARQL ASK
+	// Execute a SPARQL ASK using the native IWB triple store
+	//Input the query to execute
 	public static boolean executeASK(String query) {
 		ReadDataManager dm = EndpointImpl.api().getDataManager();
 		QueryBuilder<BooleanQuery> queryBuilder = QueryBuilder
@@ -90,7 +100,8 @@ public class IWBquery {
 		return result;
 	}
 
-	
+	//Execute a SPARQL ASK using an external triple store
+	//Input the query to execute
 	public static boolean executeASK_direct(String query,String endpointUrl){
 		SPARQLRepository repo=new SPARQLRepository(endpointUrl);
 		RepositoryConnection con=new SPARQLConnection(repo);
@@ -112,6 +123,8 @@ public class IWBquery {
 			
 	}
 
+	//Execute a SPARQL Select using an external triple store
+	//Input the query to execute
 	public static TupleQueryResult executeSelect_direct(String query,String endpointUrl){
 		SPARQLRepository repo=new SPARQLRepository(endpointUrl);
 		RepositoryConnection con=new SPARQLConnection(repo);
@@ -134,19 +147,38 @@ public class IWBquery {
 	}
 	
 	// Get all the dimensions of a data cube
-	public static List<LDResource> getDataCubeDimensions(String dataCubeURI,
-			String SPARQLservice) {
+	//Input: The cubeURI, cubeGraph, SPARQL service
+	// The cube Graph and SPARQL service can be null if not available
+	public static List<LDResource> getDataCubeDimensions(String dataCubeURI, String cubeGraph,
+			String cubeDSDGraph,String SPARQLservice) {
 
 		String getCubeDimensions_query = "PREFIX qb: <http://purl.org/linked-data/cube#>"
 				+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>" 
 				+ "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>"
 				+ "select  distinct ?dim ?label ?skoslabel where {";
+		
+		//If a SPARQL service is defined
 		if (SPARQLservice != null) {
 			getCubeDimensions_query += "SERVICE " + SPARQLservice + " {";
 		}
 
-		getCubeDimensions_query += dataCubeURI	+ " qb:structure ?dsd."
-				+ "?dsd qb:component  ?cs."
+		//If a cube graph is defined
+		if (cubeGraph != null) {
+			getCubeDimensions_query += "GRAPH <" + cubeGraph + "> {";
+		}
+		
+		getCubeDimensions_query += dataCubeURI	+ " qb:structure ?dsd.";
+		
+		//If a cube graph is defined
+		if (cubeGraph != null) {
+			getCubeDimensions_query += "}";
+		}
+		
+		//If a cube DSD graph is defined
+		if (cubeDSDGraph != null) {
+			getCubeDimensions_query += "GRAPH <" + cubeDSDGraph + "> {";
+		}
+		getCubeDimensions_query += "?dsd qb:component  ?cs."
 				+ "?cs qb:dimension  ?dim."
 				+ "OPTIONAL {?dim rdfs:label ?label." +
 				"FILTER (lang(?label) = \"\" || lang(?label) = \"en\")}" +
@@ -156,6 +188,12 @@ public class IWBquery {
 				"?cons skos:prefLabel ?skoslabel." +
 				"FILTER (lang(?skoslabel) = \"\" || lang(?skoslabel) = \"en\")}}";
 
+		//If cube DSD graph is defined
+		if (cubeDSDGraph != null) {
+			getCubeDimensions_query += "}";
+		}
+				
+		//If a SPARQL service is defined
 		if (SPARQLservice != null) {
 			getCubeDimensions_query += "}";
 		}
@@ -171,6 +209,7 @@ public class IWBquery {
 				LDResource ldr = new LDResource(bindingSet.getValue("dim")
 						.stringValue());
 				
+				//check if there is an rdfs:label or skos:prefLabel
 				if (bindingSet.getValue("label") != null) {
 					ldr.setLabel(bindingSet.getValue("label").stringValue());
 				}else if (bindingSet.getValue("skoslabel") != null) {
@@ -186,22 +225,49 @@ public class IWBquery {
 		return cubeDimensions;
 	}
 
-	// Get the dimension of the datacube
-	public static List<String> getDataCubeMeasure(String dataCubeURI,
-			String SPARQLservice) {
+	// Get all the measure of a data cube
+	// Input: The cubeURI, cubeGraph, SPARQL service
+	// The cube Graph and SPARQL service can be null if not available
+	public static List<String> getDataCubeMeasure(String dataCubeURI, String cubeGraph,
+			String cubeDSDGraph, String SPARQLservice) {
 
 		String getCubeMeasure_query = "PREFIX qb: <http://purl.org/linked-data/cube#>"
 						+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>" 
 						+ "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>"
 						+"select  distinct ?dim where {";
 
+		//If a SPARQL service is defined
 		if (SPARQLservice != null) {
 			getCubeMeasure_query += "SERVICE " + SPARQLservice + " {";
 		}
-		getCubeMeasure_query += dataCubeURI +"qb:structure ?dsd."
-				+ "?dsd qb:component  ?cs."
+		
+		//If a cube graph is defined
+		if (cubeGraph != null) {
+			getCubeMeasure_query += "GRAPH <" + cubeGraph + "> {";
+		}
+		
+		getCubeMeasure_query += dataCubeURI +"qb:structure ?dsd.";
+		
+		//If a cube graph is defined
+		if (cubeGraph != null) {
+			getCubeMeasure_query += "}";
+		}
+		
+		//If a cube DSD graph is defined
+		if (cubeDSDGraph != null) {
+					getCubeMeasure_query += "GRAPH <" + cubeDSDGraph + "> {";
+		}
+		
+		getCubeMeasure_query+= "?dsd qb:component  ?cs."
 				+ "?cs qb:measure  ?dim.}";
-
+		
+		//If a cube DSD graph is defined
+		if (cubeDSDGraph != null) {
+				getCubeMeasure_query += "}";
+		}
+		
+		
+		//If a SPARQL service is defined
 		if (SPARQLservice != null) {
 			getCubeMeasure_query += "}";
 		}
@@ -221,25 +287,49 @@ public class IWBquery {
 		return cubeMeasure;
 	}
 
+	
 	public static List<LDResource> getDimensionValues(String dimensionURI,
-			String cubeURI, String SPARQLservice) {
+			String cubeURI, String cubeGraph,String cubeDSDGraph,String SPARQLservice) {
 
 		String getDimensionValues_query = "PREFIX qb: <http://purl.org/linked-data/cube#>"
 						+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>" 
 						+ "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>"
 						+"select  distinct ?value ?label ?skoslabel where {";
 
+		//If a SPARQL service is defined
 		if (SPARQLservice != null) {
 			getDimensionValues_query += "SERVICE " + SPARQLservice + " {";
 		}
+		
+		//If a cube graph is defined
+		if (cubeGraph != null) {
+			getDimensionValues_query += "GRAPH <" + cubeGraph + "> {";
+		}
 
 		getDimensionValues_query += "?observation qb:dataSet "	+ cubeURI + "."
-				+ "?observation <"+ dimensionURI+ "> ?value."
-				+ "OPTIONAL {?value rdfs:label ?label." +
+				+ "?observation <"+ dimensionURI+ "> ?value.";
+		
+		//If a cube graph is defined
+		if (cubeGraph != null) {
+			getDimensionValues_query += "}";
+		}
+		
+		getDimensionValues_query+="OPTIONAL{";
+		//If a cube DSD graph is defined
+		if (cubeDSDGraph != null) {
+			getDimensionValues_query += "GRAPH <" + cubeDSDGraph + "> {";
+		}
+		getDimensionValues_query+= "{?value rdfs:label ?label." +
 				"FILTER (lang(?label) = \"\" || lang(?label) = \"en\")}" +
-				"OPTIONAL {?value skos:prefLabel ?skoslabel." +
-				"FILTER (lang(?skoslabel) = \"\" || lang(?skoslabel) = \"en\")}}";
+				"UNION {?value skos:prefLabel ?skoslabel." +
+				"FILTER (lang(?skoslabel) = \"\" || lang(?skoslabel) = \"en\")}}}";
+		
+		//If a cube DSD graph is defined
+		if (cubeDSDGraph != null) {
+			getDimensionValues_query += "}";
+		}
 
+		//If a SPARQL service is defined
 		if (SPARQLservice != null) {
 			getDimensionValues_query += "}";
 		}
@@ -263,6 +353,8 @@ public class IWBquery {
 			}
 		} catch (QueryEvaluationException e1) {
 			e1.printStackTrace();
+			System.out.println(dimensionURI);
+			
 		}
 
 		Collections.sort(dimensionValues);
@@ -292,7 +384,8 @@ public class IWBquery {
 	}
 
 	public static List<LDResource> getDimensionValuesFromCodeList(
-			String dimensionURI, String cubeURI, String SPARQLservice) {
+			String dimensionURI, String cubeURI, String cubeDSDGraph,
+			String SPARQLservice) {
 
 		String getDimensionValues_query ="PREFIX qb: <http://purl.org/linked-data/cube#>"
 				+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>" 
@@ -303,6 +396,11 @@ public class IWBquery {
 			getDimensionValues_query += "SERVICE " + SPARQLservice + " {";
 		}
 				
+		//If a cube DSD graph is defined
+		if (cubeDSDGraph != null) {
+				getDimensionValues_query += "GRAPH <" + cubeDSDGraph + "> {";
+		}
+		
 		getDimensionValues_query+=
 				"<"+ dimensionURI+ "> qb:codeList ?cd."
 				+ "?cd skos:hasTopConcept ?value."
@@ -310,6 +408,11 @@ public class IWBquery {
 				"FILTER (lang(?label) = \"\" || lang(?label) = \"en\")}" +
 				"OPTIONAL {?value skos:prefLabel ?skoslabel." +
 				"FILTER (lang(?skoslabel) = \"\" || lang(?skoslabel) = \"en\")}}";
+		
+		//If a cube DSD graph is defined
+		if (cubeDSDGraph != null) {
+			getDimensionValues_query += "}";
+		}
 		
 		if (SPARQLservice != null) {
 			getDimensionValues_query += "}";
@@ -319,8 +422,8 @@ public class IWBquery {
 		List<LDResource> dimensionValues = new ArrayList<LDResource>();
 
 		// Create one thread for each dimension value
-		//ExecutorService executor = Executors.newCachedThreadPool();
-		//List<Future<List<LDResource>>> list = new ArrayList<Future<List<LDResource>>>();
+	//	ExecutorService executor = Executors.newCachedThreadPool();
+//		List<Future<List<LDResource>>> list = new ArrayList<Future<List<LDResource>>>();
 		try {
 			while (res.hasNext()) {
 				BindingSet b = res.next();
@@ -334,10 +437,10 @@ public class IWBquery {
 					resource.setLabel(b.getValue("skoslabel").stringValue());
 				}
 
-		/*		Callable<List<LDResource>> worker = new DimValueInCubeThread(
-						dimensionURI, b, cubeURI,SPARQLservice);
-				Future<List<LDResource>> submit = executor.submit(worker);
-				list.add(submit);*/
+		//		Callable<List<LDResource>> worker = new DimValueInCubeThread(
+		//				dimensionURI, resource, cubeURI,SPARQLservice);
+		//		Future<List<LDResource>> submit = executor.submit(worker);
+		//		list.add(submit);
 
 				// Check if a value from the code list exists in the datacube
 
@@ -346,7 +449,7 @@ public class IWBquery {
 		//		 }
 			}
 
-			/*for (Future<List<LDResource>> future : list) {
+		/*	for (Future<List<LDResource>> future : list) {
 				try {
 					List<LDResource> dimValuesList = future.get();
 					dimensionValues.addAll(dimValuesList);
@@ -430,12 +533,101 @@ public class IWBquery {
 
 		return dimensionsAndValues;
 	}
+	
+	public static String getCubeGraph(String cubeURI,String SPARQLservice ){
+		
+		String geCubeGraph_query= "PREFIX qb: <http://purl.org/linked-data/cube#>"
+						+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>" 
+						+ "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>" +
+						"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>" +
+						"select distinct ?graph_uri where{";
+		
+		if (SPARQLservice != null) {
+			geCubeGraph_query += "SERVICE " + SPARQLservice + " {";
+		}
+						
+		
+	
+		geCubeGraph_query+=	" GRAPH ?graph_uri{" 
+				+cubeURI+ " rdf:type qb:DataSet }}";
+		
+		if (SPARQLservice != null) {
+			geCubeGraph_query += "}";
+		}
+		
+		TupleQueryResult res = executeSelect(geCubeGraph_query);
+		
+		String graphURI=null;
+		try {
+			if(res.hasNext()){
+				graphURI= res.next().getValue("graph_uri").toString();
+			}
+		} catch (QueryEvaluationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return graphURI;
+	}
+	
+		public static String getCubeStructureGraph(String cubeURI,String cubeGraph,String SPARQLservice ){
+		
+		String geCubeGraph_query= "PREFIX qb: <http://purl.org/linked-data/cube#>"
+						+ "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>" 
+						+ "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>" +
+						"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>" +
+						"select distinct ?graph_uri where{";
+		
+		if (SPARQLservice != null) {
+			geCubeGraph_query += "SERVICE " + SPARQLservice + " {";
+		}
+						
+		if (cubeGraph != null) {
+			geCubeGraph_query += "GRAPH <" + cubeGraph + "> {";
+		}
+	
+		geCubeGraph_query+=	cubeURI+ "qb:structure ?dsd. ";
+		
+		if (cubeGraph != null) {
+			geCubeGraph_query += "}";
+		}
+		
+		geCubeGraph_query+=	"GRAPH ?graph_uri{" +
+				"?dsd rdf:type qb:DataStructureDefinition }}";
+		
+		if (SPARQLservice != null) {
+			geCubeGraph_query += "}";
+		}
+		
+		TupleQueryResult res = executeSelect(geCubeGraph_query);
+		
+		String graphURI=null;
+		try {
+			while(res.hasNext()){
+				String tmpgraphURI=res.next().getValue("graph_uri").toString();
+				if(globalDSD && tmpgraphURI.contains("globaldsd")){
+					graphURI= tmpgraphURI;
+				}else if(!globalDSD && !tmpgraphURI.contains("globaldsd")){
+					if(notime && tmpgraphURI.contains("notime")){
+						graphURI= tmpgraphURI;
+					}else if(!notime && !tmpgraphURI.contains("notime")){
+						graphURI= tmpgraphURI;
+					}
+				}
+			}
+		} catch (QueryEvaluationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return graphURI;
+	}
 
 	public static TupleQueryResult get2DVisualsiationValues(
 			List<LDResource> visualDims,
 			HashMap<LDResource, LDResource> fixedDims, List<String> measures,
 			HashMap<LDResource, List<LDResource>> alldimensionvalues,
-			String cubeURI, String SPARQLservice) {
+			String cubeURI,String cubeGraph, String SPARQLservice) {
 
 		String sparql_query = "Select ";
 		int i = 1;
@@ -451,6 +643,10 @@ public class IWBquery {
 
 		if (SPARQLservice != null) {
 			sparql_query += "SERVICE " + SPARQLservice + " {";
+		}
+		
+		if (cubeGraph != null) {
+			sparql_query += "GRAPH <" + cubeGraph + "> {";
 		}
 		
 		sparql_query += "?obs <http://purl.org/linked-data/cube#dataSet> "+ cubeURI + ".";
@@ -477,10 +673,11 @@ public class IWBquery {
 			
 		}
 		
-		
-		
-
 		sparql_query += "?obs  <" + measures.get(0) + "> ?measure.} ";
+		
+		if (cubeGraph != null) {
+			sparql_query += "}";
+		}
 		
 		if (SPARQLservice != null) {
 			sparql_query += "}";

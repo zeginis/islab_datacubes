@@ -16,7 +16,7 @@ public class CubeBrowsingUtils {
 	 * values for these dimensions
 	 */
 	public static HashMap<LDResource, List<LDResource>> getDimsValues(
-			List<LDResource> dimensions, String cubeURI,boolean useCodeLists,String SPARQLservice) {
+			List<LDResource> dimensions, String cubeURI,String cubeGraph,String cubeDSDGraph,boolean useCodeLists,String SPARQLservice) {
 
 		//Create an executor to hold all threads
 		ExecutorService executor = Executors.newFixedThreadPool(dimensions.size());
@@ -25,7 +25,7 @@ public class CubeBrowsingUtils {
 		//Create one thread for each dimension
 		for (final LDResource vRes : dimensions) {
 			Callable<HashMap<LDResource, List<LDResource>>> worker = new DimensionValuesThread(
-					vRes, cubeURI,useCodeLists,SPARQLservice);
+					vRes, cubeURI,cubeGraph,cubeDSDGraph,useCodeLists,SPARQLservice);
 			Future<HashMap<LDResource, List<LDResource>>> submit = executor
 					.submit(worker);
 			list.add(submit);
@@ -61,14 +61,17 @@ public class CubeBrowsingUtils {
 			List<LDResource> allDimensions,
 			HashMap<LDResource, List<LDResource>> allDimensionsValues) {
 
+		
+		List<LDResource> tmpallDimensions=new ArrayList<LDResource>();
+		tmpallDimensions.addAll(allDimensions);
 		// If there exist at least 2 dimensions
 		List<LDResource> visualDimensions = null;
-		if (allDimensions.size() > 1) {
+		if (tmpallDimensions.size() > 1) {
 			visualDimensions=new ArrayList<LDResource>(2);
 			
 			//find dimension with most values
-			LDResource dim1 = allDimensions.get(0);
-			for(LDResource ldr:allDimensions){
+			LDResource dim1 = tmpallDimensions.get(0);
+			for(LDResource ldr:tmpallDimensions){
 				int dim1NumberOfValues = allDimensionsValues.get(dim1).size();
 				int lrdNumberOfValues = allDimensionsValues.get(ldr).size();
 				if(lrdNumberOfValues>dim1NumberOfValues){
@@ -76,10 +79,10 @@ public class CubeBrowsingUtils {
 				}
 			}
 			
-			allDimensions.remove(dim1);
+			tmpallDimensions.remove(dim1);
 			//find 2nd dimension with most values
-			LDResource dim2 = allDimensions.get(0);
-			for(LDResource ldr:allDimensions){
+			LDResource dim2 = tmpallDimensions.get(0);
+			for(LDResource ldr:tmpallDimensions){
 				int dim2NumberOfValues = allDimensionsValues.get(dim2).size();
 				int lrdNumberOfValues = allDimensionsValues.get(ldr).size();
 				if(lrdNumberOfValues>dim2NumberOfValues){

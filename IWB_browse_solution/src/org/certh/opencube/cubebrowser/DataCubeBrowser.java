@@ -54,29 +54,46 @@ import org.openrdf.query.TupleQueryResult;
  */
 public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 
+	//The left container to show the combo boxes with the visual dimensions
 	private FContainer leftcontainer = new FContainer("leftcontainer");
 
+	//The right container to show the combo boxes with the fixed dimensions values
 	private FContainer rightcontainer = new FContainer("rightcontainer");
 
+	//All the cube dimensions
 	private List<LDResource> cubeDimensions = new ArrayList<LDResource>();
 
+	//The cube dimensions to visualize (2 dimensions)
 	private List<LDResource> visualDimensions = new ArrayList<LDResource>();
 
+	//The fixed dimensions
 	private List<LDResource> fixedDimensions = new ArrayList<LDResource>();
 
+	//A map (dimension URI - dimension values) with all the cube dimension values
 	private HashMap<LDResource, List<LDResource>> allDimensionsValues = new HashMap<LDResource, List<LDResource>>();
 
+	//The selected value for each fixed dimension
 	private HashMap<LDResource, LDResource> fixedDimensionsSelectedValues = new HashMap<LDResource, LDResource>();
 
+	//A map with the corresponding components for each fixed cube dimension
 	private HashMap<LDResource, List<FComponent>> dimensionURIfcomponents = new HashMap<LDResource, List<FComponent>>();
 
+	//The cube measures
 	private List<String> cubeMeasure = new ArrayList<String>();
 
+	//The cube URI to visualize (required)
 	private String datacubeURI = "";
 	
+	//The SPARQL service to get data (not required)
 	private String SPARQL_service="";
+	
+	//The graph of the cube
+	private String cubeGraph=null;
+	
+	//The graph of the cueb structure
+	private String cubeDSDGraph=null;
 
-	// create table model for visualization
+	// The table model for visualization of the cube
 	private FTable ftable = new FTable("ftable");
 
 	public static class Config extends WidgetBaseConfig{
@@ -99,41 +116,51 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		// Central container
 		FContainer cnt = new FContainer(id);
 	
+		//Get the cube URI from the widget configuration
 		datacubeURI = config.dataCubeURI;
 		
+		//Get the SPARQL service (if any) from the cube configuration
 		SPARQL_service=config.sparqlService;
+		
+		//Get Cube Graph
+		cubeGraph=IWBquery.getCubeGraph(datacubeURI, SPARQL_service);
+		
+		//Get Cube Structure
+		cubeDSDGraph=IWBquery.getCubeStructureGraph(datacubeURI,cubeGraph, SPARQL_service);
 
-		// Get all Cube dimensions
 		long totalstarttime = System.currentTimeMillis();
-
 		long startTime = System.currentTimeMillis();
 
-		cubeDimensions.addAll(IWBquery.getDataCubeDimensions(datacubeURI,SPARQL_service));
+		// Get all Cube dimensions
+		cubeDimensions.addAll(IWBquery.getDataCubeDimensions(datacubeURI,cubeGraph,cubeDSDGraph,SPARQL_service));
 
 		long stopTime = System.currentTimeMillis();
 		long elapsedTime = stopTime - startTime;
 		System.out.println("Time cubeDimensions: " + elapsedTime);
-
-		// Get the Cube measure
+	
 		startTime = System.currentTimeMillis();
-
-		cubeMeasure.addAll(IWBquery.getDataCubeMeasure(datacubeURI,SPARQL_service));
+		
+		// Get the Cube measure
+		cubeMeasure.addAll(IWBquery.getDataCubeMeasure(datacubeURI,cubeGraph,cubeDSDGraph,SPARQL_service));
 
 		stopTime = System.currentTimeMillis();
 		elapsedTime = stopTime - startTime;
 		System.out.println("Time cubeMeasure: " + elapsedTime);
-		// Get values for each dimension
+				
+	
 		startTime = System.currentTimeMillis();
+
+		// Get values for each cube dimension
 		allDimensionsValues.putAll(CubeBrowsingUtils.getDimsValues(
-				cubeDimensions, datacubeURI,config.useCodeLists,SPARQL_service));
+				cubeDimensions, datacubeURI,cubeGraph,cubeDSDGraph,config.useCodeLists,SPARQL_service));
 		
 		stopTime = System.currentTimeMillis();
 		elapsedTime = stopTime - startTime;
 		System.out.println("Time allDimensionsValues: " + elapsedTime);
-
-		// Dimensions for visualization
+		
 		startTime = System.currentTimeMillis();
 
+		// Select the two dimension with the most values for visualization
 		visualDimensions.addAll(CubeBrowsingUtils.getRandomDims4Visualisation(
 				cubeDimensions, allDimensionsValues));
 
@@ -141,9 +168,10 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		elapsedTime = stopTime - startTime;
 		System.out.println("Time visualDimensions: " + elapsedTime);
 
-		// Fixed dimensions
+		
 		startTime = System.currentTimeMillis();
 
+		// Get the fixed cube dimensions
 		fixedDimensions.addAll(CubeBrowsingUtils.getFixedDimensions(
 				cubeDimensions, visualDimensions));
 
@@ -151,33 +179,33 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		elapsedTime = stopTime - startTime;
 		System.out.println("Time fixedDimensions: " + elapsedTime);
 
-		// Selected values for the fixed dimensions
+		
 		startTime = System.currentTimeMillis();
 
+		// Selected values for the fixed dimensions
 		fixedDimensionsSelectedValues.putAll(CubeBrowsingUtils
 				.getFixedDimensionsRandomSelectedValues(allDimensionsValues,
 						fixedDimensions));
 		stopTime = System.currentTimeMillis();
 		elapsedTime = stopTime - startTime;
-		System.out
-				.println("Time fixedDimensionsSelectedValues: " + elapsedTime);
+		System.out.println("Time fixedDimensionsSelectedValues: " + elapsedTime);
 
-		// Get query tuples for visualization
+		
 		startTime = System.currentTimeMillis();
 
+		// Get query tuples for visualization
 		TupleQueryResult res = IWBquery.get2DVisualsiationValues(
 				visualDimensions, fixedDimensionsSelectedValues, cubeMeasure,
-				allDimensionsValues, datacubeURI,SPARQL_service);
+				allDimensionsValues, datacubeURI,cubeGraph,SPARQL_service);
 
 		stopTime = System.currentTimeMillis();
 		elapsedTime = stopTime - startTime;
-		System.out.println("Time IWBquery.get2DVisualsiationValues: "
-				+ elapsedTime);
+		System.out.println("Time IWBquery.get2DVisualsiationValues: "+ elapsedTime);
 
 		startTime = System.currentTimeMillis();
 
-		FTableModel tm = create2DCubeTableModel(res, allDimensionsValues,
-				visualDimensions);
+		//Create an FTable model based on the query tuples
+		FTableModel tm = create2DCubeTableModel(res, allDimensionsValues,visualDimensions);
 
 		stopTime = System.currentTimeMillis();
 		elapsedTime = stopTime - startTime;
@@ -185,24 +213,41 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 
 		startTime = System.currentTimeMillis();
 
-		// set ftable attributes
-		// ftable.setShowCSVExport(true);
+		// Initialize FTable
+		ftable.setShowCSVExport(true);
 		ftable.setNumberOfRows(20);
 		ftable.setEnableFilter(true);
 		ftable.setOverFlowContainer(true);
 		ftable.setFilterPos(FilterPos.TOP);
 		ftable.setSortable(false);
 		ftable.setModel(tm);
+				
+		////////////Left container//////////////////
+		
+		//left container styling
+		leftcontainer.addStyle("border-style", "solid");
+		leftcontainer.addStyle("border-width", "1px");
+		leftcontainer.addStyle("padding", "20px");
+		leftcontainer.addStyle("border-radius", "5px");
+		leftcontainer.addStyle("border-color", "#C8C8C8 ");
+		leftcontainer.addStyle("height", "200px ");
+		leftcontainer.addStyle("width", "400px ");
+		leftcontainer.addStyle("display", "table-cell ");
+		leftcontainer.addStyle("vertical-align", "middle ");
+		leftcontainer.addStyle("align","center");
+			
 
-		cnt.add(ftable);
-
-		// cnt.add(ftable_cnt);
+		FLabel fixeddimlabel = new FLabel("fixeddimlabel", "<b>Select the cube dimensions to visualize:<b>");
+		leftcontainer.add(fixeddimlabel);
+		
+		//New line
+		leftcontainer.add(getNewLineComponent());
 
 		// Add label for Dim1 (column headings)
 		FLabel dim1Label = new FLabel("dim1Label", "<b>Column Headings<b>");
 		leftcontainer.add(dim1Label);
 
-		// Add Combobox for Dim1
+		// Add Combo box for Dim1
 		final FComboBox dim1Combo = new FComboBox("dim1Combo") {
 			@Override
 			public void onChange() {
@@ -212,7 +257,6 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 
 				// Get the URI of the 2nd selected dimension
 				List<String> d2Selected = null;
-
 				for (FComponent fc : leftcontainer.getAllComponents()) {
 					if (fc.getId().contains("_dim2Combo")) {
 						d2Selected = ((FComboBox) fc).getSelectedAsString();
@@ -237,11 +281,13 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 						break;
 					}
 				}
+				
 				setVisualDimensions(d1Selected, d2Selected);
 				showCube();
 			}
 		};
 
+		//populate Dim1 combo box
 		for (LDResource ldr : cubeDimensions) {
 			dim1Combo.addChoice(ldr.getURIorLabel(), ldr.getURI());
 		}
@@ -253,21 +299,19 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		leftcontainer.add(getNewLineComponent());
 
 		// Add label for Dim1 (column headings)
-		FLabel dim2Label = new FLabel(
-				"dim2Label",
-				"<b>Rows (values in first column)</b> &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp");
+		FLabel dim2Label = new FLabel("dim2Label",	"<b>Rows (values in first column)</b>");
 		leftcontainer.add(dim2Label);
 
 		// Add Combobox for Dim2
 		final FComboBox dim2Combo = new FComboBox("dim2Combo") {
 			@Override
 			public void onChange() {
-				List<String> d1Selected = null;
-
+				
 				// Get the URI of the 2nd selected dimension
 				List<String> d2Selected = this.getSelectedAsString();
 
 				// Get the URI of the 1st selected dimension
+				List<String> d1Selected = null;
 				for (FComponent fc : leftcontainer.getAllComponents()) {
 					if (fc.getId().contains("_dim1Combo")) {
 						d1Selected = ((FComboBox) fc).getSelectedAsString();
@@ -300,6 +344,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 			}
 		};
 
+		//populate Dim2 combo box
 		for (LDResource ldr : cubeDimensions) {
 			dim2Combo.addChoice(ldr.getURIorLabel(), ldr.getURI());
 		}
@@ -307,44 +352,26 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		dim2Combo.setPreSelected(visualDimensions.get(1).getURI());
 		leftcontainer.add(dim2Combo);
 
-		// NEW LINE
-		leftcontainer.add(getNewLineComponent());
-
-		dimensionURIfcomponents.clear();
-		FLabel otheropts = new FLabel("Oprions", "<b>Other options<b>");
-
+	
+		////////////Right container//////////////////
+		
+		//Right container styling
+		rightcontainer.addStyle("border-style", "solid");
+		rightcontainer.addStyle("border-width", "1px");
+		rightcontainer.addStyle("padding", "20px");
+		rightcontainer.addStyle("border-radius", "5px");
+		rightcontainer.addStyle("border-color", "#C8C8C8 ");
+		rightcontainer.addStyle("height", "200px ");
+		rightcontainer.addStyle("width", "400px ");
+		rightcontainer.addStyle("display", "table-cell ");
+		rightcontainer.addStyle("vertical-align", "middle ");
+		rightcontainer.addStyle("align","center");
+		
+		FLabel otheropts = new FLabel("Options", "<b>Select the fixed cube dimensions values:<b>");
 		rightcontainer.add(otheropts);
 
-		// NEW LINE
-		rightcontainer.add(getNewLineComponent());
-
-		for (LDResource fDim : fixedDimensions) {
-
-			List<FComponent> dimComponents = new ArrayList<FComponent>();
-			FLabel fDimLabel = new FLabel(fDim.getURIorLabel() + "_label",
-					"<b>" + fDim.getURIorLabel() + "</b>");
-			dimComponents.add(fDimLabel);
-			rightcontainer.add(fDimLabel);
-			FComboBox fDimCombo = new FComboBox(fDim.getURIorLabel() + "_combo") {
-				@Override
-				public void onChange() {
-					showCube();
-				}
-			};
-
-			for (LDResource ldr : allDimensionsValues.get(fDim)) {
-				fDimCombo.addChoice(ldr.getURIorLabel(), ldr.getURI());
-			}
-
-			fDimCombo.setPreSelected(fixedDimensionsSelectedValues.get(fDim)
-					.getURI());
-
-			dimComponents.add(fDimCombo);
-			rightcontainer.add(fDimCombo);
-
-			rightcontainer.add(getNewLineComponent());
-			dimensionURIfcomponents.put(fDim, dimComponents);
-		}
+		//Add labels and combo boxed for the fixed cube dimensions
+		addFixedDimensions(false);
 
 		stopTime = System.currentTimeMillis();
 		elapsedTime = stopTime - startTime;
@@ -353,13 +380,23 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		elapsedTime = stopTime - totalstarttime;
 		System.out.println("Total time: " + elapsedTime);
 
+		//An FGrid to show visual and fixed cube dimensions
 		FGrid fg = new FGrid("mygrid");
+		
+		//Styling of FGrid
+		fg.addStyle("align","center");
+		fg.addStyle("margin","auto");
+		
 		ArrayList<FComponent> farray = new ArrayList<FComponent>();
 		
+		//Add components to FGrid			
 		farray.add(leftcontainer);
 		farray.add(rightcontainer);
 		fg.addRow(farray);
-		fg.render();
+
+		//Add components to central container
+		cnt.add(ftable);
+		cnt.add(getNewLineComponent());
 		cnt.add(fg);
 
 		return cnt;
@@ -372,6 +409,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		tmpvisualDimensions.add(null);
 		tmpvisualDimensions.add(null);
 
+		//The the visual dimensions from the combo boxes
 		for (LDResource ldres : cubeDimensions) {
 			// The first dimension
 			if (ldres.getURI().equals(d1Selected.get(0))) {
@@ -388,17 +426,17 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		visualDimensions.clear();
 		visualDimensions.addAll(tmpvisualDimensions);
 
-		// remove previous combo boxes
+		// remove previous combo boxes, labels and newlines
 		for (LDResource fDim : fixedDimensions) {
 			Collection<FComponent> allcomp = rightcontainer.getAllComponents();
 			for (FComponent comp : allcomp) {
-				// System.out.println(comp.getId());
 				if (comp.getId().contains(fDim.getURIorLabel() + "_label")
-						|| comp.getId().contains(
-								fDim.getURIorLabel() + "_combo"))
+						|| comp.getId().contains(fDim.getURIorLabel() + "_combo") 
+						|| comp.getId().contains("fhtmlnewline_"))
 					rightcontainer.removeAndRefresh(comp);
 			}
 		}
+		
 
 		// Tmp Fixed dimensions
 		List<LDResource> tmpFixedDimensions = CubeBrowsingUtils
@@ -417,65 +455,89 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		fixedDimensionsSelectedValues.clear();
 		fixedDimensionsSelectedValues.putAll(tmpFixedDimensionsSelectedValues);
 
-		// Clear the map with Dimension URI - List of components (Label,
-		// Combobox)
+		//Add labels and combo boxed for the fixed cube dimensions
+		addFixedDimensions(true);	
+	}
+	
+	//Add labels and combo boxed for the fixed cube dimensions
+	//Input: refresh, true: when refresh is needed i.e. not at the initialization,
+	//       false when refresh is not need i.e. at the initialization
+	private void addFixedDimensions(boolean refresh){
+	
+		// NEW LINE
+		if(refresh){
+			rightcontainer.addAndRefresh(getNewLineComponent());
+		}else{
+			rightcontainer.add(getNewLineComponent());
+		}
+		
 		dimensionURIfcomponents.clear();
-
-		// For each fixed dimension add new Label/Combobox
+		//Add a Label - Combo box for each fixed cube dimension
 		for (LDResource fDim : fixedDimensions) {
 
 			List<FComponent> dimComponents = new ArrayList<FComponent>();
-
-			// Add label
+			
+			//Add the label for the fixed cube dimension
 			FLabel fDimLabel = new FLabel(fDim.getURIorLabel() + "_label",
 					"<b>" + fDim.getURIorLabel() + "</b>");
 			dimComponents.add(fDimLabel);
-			rightcontainer.addAndRefresh(fDimLabel);
-
-			// Add Combobox
+			
+			if(refresh){
+				rightcontainer.addAndRefresh(fDimLabel);
+			}else{
+				rightcontainer.add(fDimLabel);
+			}			
+			
+			//Add the combo box for the fixed cube dimension
 			FComboBox fDimCombo = new FComboBox(fDim.getURIorLabel() + "_combo") {
 				@Override
 				public void onChange() {
 					showCube();
-
 				}
 			};
 
-			// Add choices to the combo box
+			//Populate the combo box with the values of the fixed cube dimension
 			for (LDResource ldr : allDimensionsValues.get(fDim)) {
 				fDimCombo.addChoice(ldr.getURIorLabel(), ldr.getURI());
 			}
 
-			// Set preselected value to combo box
-			fDimCombo.setPreSelected(fixedDimensionsSelectedValues.get(fDim)
-					.getURI());
+			//Combo box pre-selected value
+			fDimCombo.setPreSelected(fixedDimensionsSelectedValues.get(fDim).getURI());
 
 			dimComponents.add(fDimCombo);
-			rightcontainer.addAndRefresh(fDimCombo);
-
-			rightcontainer.add(getNewLineComponent());
-			// Add both components to the URI - Component list Map
+			
+			if(refresh){
+				rightcontainer.addAndRefresh(fDimCombo);
+			}else{
+				rightcontainer.add(fDimCombo);
+			}
+			
+			// NEW LINE
+			if(refresh){
+				rightcontainer.addAndRefresh(getNewLineComponent());
+			}else{
+				rightcontainer.add(getNewLineComponent());
+			}
+			
 			dimensionURIfcomponents.put(fDim, dimComponents);
 		}
-		rightcontainer.initializeView();
 
+		
 	}
 
+	//Show the data cube
 	private void showCube() {
 
 		HashMap<LDResource, LDResource> tmpFixedDimensionsSelectedValues = new HashMap<LDResource, LDResource>();
 
+		//Get the selected value for each fixed dimension
 		for (LDResource dimres : dimensionURIfcomponents.keySet()) {
-			List<FComponent> dimComponents = dimensionURIfcomponents
-					.get(dimres);
-			String selectedValue = ((FComboBox) dimComponents.get(1))
-					.getSelectedAsString().get(0);
-			List<LDResource> selectedDimValues = allDimensionsValues
-					.get(dimres);
+			List<FComponent> dimComponents = dimensionURIfcomponents.get(dimres);
+			String selectedValue = ((FComboBox) dimComponents.get(1)).getSelectedAsString().get(0);
+			List<LDResource> selectedDimValues = allDimensionsValues.get(dimres);
 			for (LDResource dimValue : selectedDimValues) {
 				if (dimValue.getURI().equals(selectedValue)) {
 					tmpFixedDimensionsSelectedValues.put(dimres, dimValue);
-
 				}
 			}
 		}
@@ -486,10 +548,9 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		// Get query tuples for visualization
 		TupleQueryResult res = IWBquery.get2DVisualsiationValues(
 				visualDimensions, fixedDimensionsSelectedValues, cubeMeasure,
-				allDimensionsValues, datacubeURI,SPARQL_service);
+				allDimensionsValues, datacubeURI,cubeGraph,SPARQL_service);
 
 		// create table model for visualization
-
 		FTableModel newTableModel = create2DCubeTableModel(res,
 				allDimensionsValues, visualDimensions);
 		ftable.setModel(newTableModel);
@@ -497,14 +558,17 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 
 	}
 
+	//
 	private FTableModel create2DCubeTableModel(TupleQueryResult res,
-			HashMap<LDResource, List<LDResource>> dimensions4Visualisation,
+			HashMap<LDResource, List<LDResource>> dimensions4VisualisationValues,
 			List<LDResource> visualDimensions) {
+		
 
-		List<LDResource> dim1 = dimensions4Visualisation.get(visualDimensions
-				.get(0));
-		List<LDResource> dim2 = dimensions4Visualisation.get(visualDimensions
-				.get(1));
+		//Get all values for 1st visual dimension
+		List<LDResource> dim1 = dimensions4VisualisationValues.get(visualDimensions.get(0));
+		
+		//Get all values for 2nd visual dimension
+		List<LDResource> dim2 = dimensions4VisualisationValues.get(visualDimensions.get(1));
 
 		LDResource[][] v2DCube = new LDResource[dim2.size()][dim1.size()];
 
@@ -512,36 +576,44 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 
 		List<String> bindingNames;
 		try {
+			
+			//The first row of FTableModel
 			bindingNames = res.getBindingNames();
+			
+			//The first column of 1st row - the name of the 2nd dimension
 			tm.addColumn(visualDimensions.get(1).getURIorLabel());
 
+			//The rest columns of the first row - the values of the 1st dimension
 			for (LDResource dim1Val : dim1) {
 				tm.addColumn(dim1Val.getURIorLabel());
 			}
 
+			//for each cube observation
 			while (res.hasNext()) {
 
 				BindingSet bindingSet = res.next();
 
-				String dim1Val = bindingSet.getValue(bindingNames.get(0))
-						.stringValue();
-				String dim2Val = bindingSet.getValue(bindingNames.get(1))
-						.stringValue();
-				String measure = bindingSet.getValue(bindingNames.get(2))
-						.stringValue();
-				String obsURI = bindingSet.getValue(bindingNames.get(3))
-						.stringValue();
-
+				//get Dim1 value
+				String dim1Val = bindingSet.getValue(bindingNames.get(0)).stringValue();
 				LDResource r1 = new LDResource(dim1Val);
-
+				
+				//get Dim2 value
+				String dim2Val = bindingSet.getValue(bindingNames.get(1)).stringValue();
 				LDResource r2 = new LDResource(dim2Val);
-
+				
+				//get measure
+				String measure = bindingSet.getValue(bindingNames.get(2)).stringValue();
+				
+				//get observation URI
+				String obsURI = bindingSet.getValue(bindingNames.get(3)).stringValue();
 				LDResource obs = new LDResource(obsURI);
 				obs.setLabel(measure);
 
+				//Add the observation to the corresponding (row, column) position of the table
 				v2DCube[dim2.indexOf(r2)][dim1.indexOf(r1)] = obs;
 			}
 
+			//populate the FTableModel based on the v2DCube created
 			for (int i = 0; i < dim2.size(); i++) {
 				Object[] data = new Object[dim1.size() + 1];
 
@@ -562,52 +634,27 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		return tm;
 	}
 
+	//get an HTML representation of an LDResource
 	private HtmlString getHTMLStringFromLDResource(LDResource ldr) {
 		if (ldr == null) {
-			return new HtmlString("EMPTY VALUE");
+			return new HtmlString("-");
 		}
 		String linktext = ldr.getURIorLabel();
 		String linkURI = ldr.getURI();
-		String html = "<a href=\"" + linkURI + "\">" + linktext + "</a>";
+		String html=linktext;
+		//String html = "<a href=\"" + linkURI + "\">" + linktext + "</a>";
 
 		HtmlString html_string = new HtmlString(html);
 		return html_string;
 
 	}
 
+	//Adds a new line to UI
 	private FHTML getNewLineComponent() {
 		Random rand = new Random();
-		FHTML fhtml = new FHTML("ftml_" + rand.nextLong());
+		FHTML fhtml = new FHTML("fhtmlnewline_" + rand.nextLong());
 		fhtml.setValue("<br><br>");
 		return fhtml;
-	}
-
-	private FTableModel createTupleQueryTableModel(TupleQueryResult res) {
-
-		FTableModel tm = new FTableModel();
-
-		List<String> bindingNames;
-		try {
-			bindingNames = res.getBindingNames();
-
-			for (String name : bindingNames) {
-				tm.addColumn(name);
-			}
-
-			while (res.hasNext()) {
-				BindingSet bindingSet = res.next();
-				int size2 = bindingSet.size();
-				String[] data = new String[size2];
-				for (int i = 0; i < size2; i++) {
-					data[i] = bindingSet.getValue(bindingNames.get(i))
-							.stringValue();
-				}
-				tm.addRow(data);
-			}
-		} catch (QueryEvaluationException e) {
-			e.printStackTrace();
-		}
-		return tm;
 	}
 
 	@Override

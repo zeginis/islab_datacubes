@@ -13,11 +13,11 @@ import org.openrdf.query.BindingSet;
 public class DimValueInCubeThread implements Callable<List<LDResource>> {
 
     private String dimensionURI;
-    private BindingSet value;
+    private LDResource value;
     private String cubeURI;
     private String SPARQLservice;
 
-    public DimValueInCubeThread(String dimensionURI, BindingSet value,String cubeURI, String SPARQLservice) {
+    public DimValueInCubeThread(String dimensionURI, LDResource value,String cubeURI, String SPARQLservice) {
         this.dimensionURI = dimensionURI;
         this.value=value;
         this.cubeURI=cubeURI;
@@ -27,12 +27,11 @@ public class DimValueInCubeThread implements Callable<List<LDResource>> {
 
     @Override
     public List<LDResource> call() throws Exception {
-		LDResource resource = new LDResource(value.getValue("value")
-				.stringValue());
+		
 		
     	List<LDResource> dimValue=new ArrayList<LDResource>();
-    	if(IWBquery.askDimensionValueInDataCube(dimensionURI,resource.getURI(),cubeURI,SPARQLservice)){
-    		dimValue.add(resource);
+    	if(IWBquery.askDimensionValueInDataCube(dimensionURI,value.getURI(),cubeURI,SPARQLservice)){
+    		dimValue.add(value);
 		}   		        	
     	
         return dimValue;
