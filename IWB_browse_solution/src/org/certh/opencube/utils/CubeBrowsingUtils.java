@@ -52,6 +52,50 @@ public class CubeBrowsingUtils {
 		return dimensionsAndValues;
 
 	}
+	
+	
+	/*
+	 * Input: a List of dimensions Output: A HashMap with the URI - List of
+	 * values for these dimensions
+	 */
+	public static HashMap<LDResource, List<LDResource>> getDimsValuesFromSlice(
+			List<LDResource> dimensions, String cubeURI,String cubeGraph,String cubeDSDGraph,
+			String sliceGraph,boolean useCodeLists,String SPARQLservice) {
+
+		//Create an executor to hold all threads
+		ExecutorService executor = Executors.newFixedThreadPool(dimensions.size());
+		List<Future<HashMap<LDResource, List<LDResource>>>> list = new ArrayList<Future<HashMap<LDResource, List<LDResource>>>>();
+		
+		//Create one thread for each dimension
+		for (final LDResource vRes : dimensions) {
+			Callable<HashMap<LDResource, List<LDResource>>> worker = new DimensionValuesFromSliceThread(
+					vRes, cubeURI,cubeGraph,cubeDSDGraph,sliceGraph,useCodeLists,SPARQLservice);
+			Future<HashMap<LDResource, List<LDResource>>> submit = executor
+					.submit(worker);
+			list.add(submit);
+
+		}
+
+		// Retrieve the results from all threads
+		HashMap<LDResource, List<LDResource>> dimensionsAndValues = new HashMap<LDResource, List<LDResource>>();
+
+		for (Future<HashMap<LDResource, List<LDResource>>> future : list) {
+			try {
+				HashMap<LDResource, List<LDResource>> dimVaulesHashMap = future
+						.get();
+				dimensionsAndValues.putAll(dimVaulesHashMap);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
+		}
+
+		executor.shutdown();
+
+		return dimensionsAndValues;
+
+	}
 
 	/*
 	 * Input: a List with all the dimensions URIs Output: Select the first 2
