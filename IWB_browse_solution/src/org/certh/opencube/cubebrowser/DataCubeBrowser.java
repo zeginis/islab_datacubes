@@ -265,8 +265,6 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 						sliceGraph, cubeDSDGraph, SPARQL_service);
 			}
 
-			long startTime = System.currentTimeMillis();
-
 			// Add top container if it is a cube not slice
 			if (isCube) {
 
@@ -300,8 +298,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 								aggdim.getURIorLabel()) {
 
 							public void onClick() {
-								Collection<FComponent> allCheckBox = topcontainer
-										.getAllComponents();
+	
 
 								// Get all selected aggregation set dimensions
 								// for browsing
@@ -856,8 +853,14 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 				rightcontainer.add(fDimLabel);
 			}
 
+			//IWB does not support too long IDs
+			String comboID=fDim.getURIorLabel();
+			if(comboID.length()>10){
+				comboID=fDim.getURIorLabel().substring(0,10);
+			}
+			
 			// Add the combo box for the fixed cube dimension
-			FComboBox fDimCombo = new FComboBox(fDim.getURIorLabel() + "_combo") {
+			FComboBox fDimCombo = new FComboBox(comboID + "_combo") {
 				@Override
 				public void onChange() {
 					showCube();
