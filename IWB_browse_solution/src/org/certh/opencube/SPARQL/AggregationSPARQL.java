@@ -13,6 +13,32 @@ import org.openrdf.query.TupleQueryResult;
 
 public class AggregationSPARQL {
 
+	public static List<LDResource> getCubesWithNoAggregationSet(){
+		
+		String getCubesWithNoAggregationSet_query=
+				"PREFIX  qb: <http://purl.org/linked-data/cube#>" +
+				"select ?dataset where {" +
+				"GRAPH ?cubeGraph{?dataset rdf:type qb:DataSet.} " +
+				"MINUS{  GRAPH ?aggGraph{ ?dataset qb:aggregationSet ?set}}}";
+		
+		TupleQueryResult res = QueryExecutor.executeSelect(getCubesWithNoAggregationSet_query);
+		
+		ArrayList<LDResource> cubesWithNoAggregationSet=new ArrayList<LDResource>();
+		
+		try {
+			while(res.hasNext()){
+				BindingSet bindingSet = res.next();
+				LDResource ldr = new LDResource(bindingSet.getValue("dataset").stringValue());
+				cubesWithNoAggregationSet.add(ldr);
+			}
+		} catch (QueryEvaluationException e) {
+			e.printStackTrace();
+		}
+	
+		return cubesWithNoAggregationSet;
+			 
+	}
+
 	public static String createNewAggregationSet(String aggregationGraph,
 			String SPARQLservice) {
 
@@ -342,7 +368,7 @@ public class AggregationSPARQL {
 			i++;
 		}
 
-		aggregated_observations_query += "(sum(xsd:integer(?measure))as ?aggregatedMeasure)where{";
+		aggregated_observations_query += "(sum(xsd:decimal(?measure))as ?aggregatedMeasure)where{";
 
 		if (SPARQLservice != null) {
 			aggregated_observations_query += "SERVICE " + SPARQLservice + " {";

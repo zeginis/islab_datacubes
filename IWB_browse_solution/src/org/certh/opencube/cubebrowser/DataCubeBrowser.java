@@ -292,9 +292,15 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 					// Show Aggregation set dimensions
 					for (LDResource aggdim : aggregationSetDims) {
 
+						//IWB does not support too long IDs
+						String checkBoxID=aggdim.getURIorLabel();
+						if(checkBoxID.length()>10){
+							checkBoxID=aggdim.getURIorLabel().substring(0,10);
+						}
+						
 						// show one check box for each aggregation set dimension
 						FCheckBox aggrDimCheckBox = new FCheckBox(
-								"aggregation_" + aggdim.getURIorLabel(),
+								"aggregation_" + checkBoxID,
 								aggdim.getURIorLabel()) {
 
 							public void onClick() {
@@ -703,8 +709,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 					public void onClick() {
 						String sliceURI = SliceSPARQL.createCubeSlice(
 								cubeSliceURI, cubeGraph,
-								fixedDimensionsSelectedValues,
-								cubeMeasure.get(0), sliceObservations);
+								fixedDimensionsSelectedValues,	sliceObservations);
 						String message = "A new slice with the following URI has been created: "
 								+ sliceURI;
 
@@ -786,17 +791,25 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 		visualDimensions.clear();
 		visualDimensions = tmpvisualDimensions;
 
-		// remove previous combo boxes, labels and newlines
+	
 		for (LDResource fDim : fixedDimensions) {
 			Collection<FComponent> allcomp = rightcontainer.getAllComponents();
 			for (FComponent comp : allcomp) {
-				if (comp.getId().contains(fDim.getURIorLabel() + "_label")
-						|| comp.getId().contains(
-								fDim.getURIorLabel() + "_combo")
-						|| comp.getId().contains("fhtmlnewlinedelete_"))
+			
+				//IWB does not support too long IDs
+				String comboID=fDim.getURIorLabel();
+				if(comboID.length()>10){
+					comboID=fDim.getURIorLabel().substring(0,10);
+				}
+				
+				if (comp.getId().contains(comboID + "_label")
+						|| comp.getId().contains(comboID + "_combo")
+						|| comp.getId().contains("fhtmlnewlinedelete_")){
 					rightcontainer.removeAndRefresh(comp);
+				}
 			}
 		}
+		
 
 		// Tmp Fixed dimensions
 		List<LDResource> tmpFixedDimensions = CubeHandlingUtils
@@ -828,7 +841,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 	// initialization,
 	// false when refresh is not need i.e. at the initialization
 	private void addFixedDimensions(boolean refresh) {
-
+		
 		// NEW LINE
 		if (refresh) {
 			rightcontainer.addAndRefresh(getNewLineComponent(true));
@@ -842,8 +855,15 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 
 			List<FComponent> dimComponents = new ArrayList<FComponent>();
 
+			//IWB does not support too long IDs
+			String comboID=fDim.getURIorLabel();
+			if(comboID.length()>10){
+				comboID=fDim.getURIorLabel().substring(0,10);
+			}
+			
+			
 			// Add the label for the fixed cube dimension
-			FLabel fDimLabel = new FLabel(fDim.getURIorLabel() + "_label",
+			FLabel fDimLabel = new FLabel(comboID + "_label",
 					"<b>" + fDim.getURIorLabel() + "</b>");
 			dimComponents.add(fDimLabel);
 
@@ -853,11 +873,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 				rightcontainer.add(fDimLabel);
 			}
 
-			//IWB does not support too long IDs
-			String comboID=fDim.getURIorLabel();
-			if(comboID.length()>10){
-				comboID=fDim.getURIorLabel().substring(0,10);
-			}
+		
 			
 			// Add the combo box for the fixed cube dimension
 			FComboBox fDimCombo = new FComboBox(comboID + "_combo") {
@@ -900,7 +916,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 	// Show the data cube
 	private void showCube() {
 
-		HashMap<LDResource, LDResource> tmpFixedDimensionsSelectedValues = new HashMap<LDResource, LDResource>();
+		fixedDimensionsSelectedValues.clear();
 
 		// Get the selected value for each fixed dimension
 		for (LDResource dimres : dimensionURIfcomponents.keySet()) {
@@ -912,13 +928,13 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 					.get(dimres);
 			for (LDResource dimValue : selectedDimValues) {
 				if (dimValue.getURI().equals(selectedValue)) {
-					tmpFixedDimensionsSelectedValues.put(dimres, dimValue);
+					fixedDimensionsSelectedValues.put(dimres, dimValue);
 				}
 			}
 		}
 
-		fixedDimensionsSelectedValues.clear();
-		fixedDimensionsSelectedValues.putAll(tmpFixedDimensionsSelectedValues);
+	
+	//	fixedDimensionsSelectedValues.putAll(tmpFixedDimensionsSelectedValues);
 
 		TupleQueryResult res = null;
 		if (isCube) {

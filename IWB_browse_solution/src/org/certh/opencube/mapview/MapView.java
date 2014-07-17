@@ -237,23 +237,12 @@ public class MapView extends AbstractWidget<MapView.Config> {
 				String temp = "";
 				String attr_labels = ""; // The labels of the attribute(s)that
 											// will be showed in the markers
-				String geo_label = "'" + geodimension.getLabel() + "'"; // The
-																		// label
-																		// of
-																		// the
-																		// geo-dimension
-																		// that
-																		// will
-																		// be
-																		// showed
-																		// in
-																		// the
-																		// markers
-
-				for (LDResource attres : cubeAttributes) { // get all the
-															// attribute labels
-															// to show in
-															// markers
+				
+				// The label of the geo-dimension that will be showed in the markers
+				String geo_label = "'" + geodimension.getLabel() + "'"; 
+				
+				// get all the attribute labels to show in markers
+				for (LDResource attres : cubeAttributes) { 
 					if (attres.getLabel() != null)
 						attr_labels += "'" + attres.getLabel() + "',";
 					else
