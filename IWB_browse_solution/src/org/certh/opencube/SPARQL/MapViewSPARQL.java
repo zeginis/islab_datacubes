@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.certh.opencube.utils.LDResource;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
 
 public class MapViewSPARQL {

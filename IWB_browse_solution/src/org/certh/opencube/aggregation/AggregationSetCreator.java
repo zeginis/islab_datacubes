@@ -1,7 +1,5 @@
 package org.certh.opencube.aggregation;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -10,8 +8,6 @@ import java.util.Set;
 
 import org.certh.opencube.SPARQL.AggregationSPARQL;
 import org.certh.opencube.SPARQL.CubeSPARQL;
-import org.certh.opencube.SPARQL.SliceSPARQL;
-import org.certh.opencube.cubebrowser.DataCubeBrowser.Config;
 import org.certh.opencube.utils.LDResource;
 
 import com.fluidops.ajax.components.FButton;
@@ -24,7 +20,6 @@ import com.fluidops.ajax.components.FLabel;
 import com.fluidops.iwb.model.ParameterConfigDoc;
 import com.fluidops.iwb.widget.AbstractWidget;
 import com.fluidops.iwb.widget.config.WidgetBaseConfig;
-import com.fluidops.util.Pair;
 
 /**
  * On some wiki page add
