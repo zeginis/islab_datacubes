@@ -722,32 +722,8 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 				bottomcontainer.add(createSlice);
 				cnt.add(bottomcontainer);
 			}
-
-			/*
-			 * // Button to create aggregation set FButton createPermutations =
-			 * new FButton("createPermutations", "createPermutations") {
-			 * 
-			 * @Override public void onClick() { OrderedPowerSet<LDResource> ops
-			 * = new OrderedPowerSet<LDResource>( (ArrayList<LDResource>)
-			 * cubeDimensions); String aggregationSetURI = AggregationSPARQL
-			 * .createNewAggregationSet(cubeDSDGraph, SPARQL_service);
-			 * AggregationSPARQL.attachCube2AggregationSet(aggregationSetURI,
-			 * cubeDSDGraph, cubeSliceURI, SPARQL_service); for (int j = 1; j <
-			 * cubeDimensions.size(); j++) { System.out.println("SIZE = " + j);
-			 * List<LinkedHashSet<LDResource>> perms = ops
-			 * .getPermutationsList(j); for (Set<LDResource> myset : perms) {
-			 * String st = ""; for (LDResource l : myset) { st += l.getURI() +
-			 * " "; } System.out.println(st);
-			 * 
-			 * String newCubeURI = AggregationSPARQL
-			 * .createCubeForAggregationSet(myset, cubeMeasure, cubeSliceURI,
-			 * cubeGraph, cubeDSDGraph, aggregationSetURI, SPARQL_service);
-			 * System.out.println("NEW CUBE: " + newCubeURI); }
-			 * System.out.println("----------");
-			 * 
-			 * } } }; cnt.add(createPermutations);
-			 */
-			// //////// Not a valid cube or Slice URI/////////////
+			
+		// //////// Not a valid cube or Slice URI/////////////
 		} else {
 
 			String uri = cubeSliceURI.replaceAll("<", "");

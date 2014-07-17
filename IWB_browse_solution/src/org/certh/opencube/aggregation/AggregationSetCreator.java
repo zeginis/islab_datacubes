@@ -34,6 +34,7 @@ import com.fluidops.util.Pair;
  * 
  * <br/>
  * {{#widget: org.certh.opencube.aggregation.AggregationSetCreator
+ * |sparqlService='<http://localhost:3031/dcbrowser/query>'
  *  }}
  * 
  * </code>
@@ -42,10 +43,13 @@ import com.fluidops.util.Pair;
 public class AggregationSetCreator extends
 		AbstractWidget<AggregationSetCreator.Config> {
 
+	// A combo box to select the cube to enable OLAP-like browsing
 	private FComboBox cubesCombo;
 
+	// The SPARQL service to get data (not required)
 	private String SPARQL_Service;
-	
+
+	// The central container
 	private FContainer cnt;
 
 	public static class Config extends WidgetBaseConfig {
@@ -63,7 +67,7 @@ public class AggregationSetCreator extends
 		// Central container
 		cnt = new FContainer(id);
 
-		// top container styling
+		// central container styling
 		cnt.addStyle("border-style", "solid");
 		cnt.addStyle("border-width", "1px");
 		cnt.addStyle("padding", "20px");
@@ -74,110 +78,107 @@ public class AggregationSetCreator extends
 		cnt.addStyle("height", "180px ");
 		cnt.addStyle("margin-left", "auto");
 		cnt.addStyle("margin-right", "auto");
-		
+
+		// Get all cubes from the store that do not have Aggregation sets
 		List<LDResource> cubesWithNoAggregationSet = AggregationSPARQL
 				.getCubesWithNoAggregationSet();
-		
-		if(cubesWithNoAggregationSet.size()>0){
 
-		FLabel aggregation_label = new FLabel("aggregation_label",
-				"<b>Please select cube for which you want to enable OLAP-like browsing:<b>");
+		//If there are cubes out of  Aggregation Set
+		if (cubesWithNoAggregationSet.size() > 0) {
 
-		// Add Combo box for Dim1
-		cubesCombo = new FComboBox("cubesCombo");
+			FLabel aggregation_label = new FLabel("aggregation_label",
+					"<b>Please select cube for which you want to enable OLAP-like browsing:<b>");
 
-		
+			// Add Combo box with cube URIs
+			cubesCombo = new FComboBox("cubesCombo");
 
-		// populate cubes combo box
-		for (LDResource cube : cubesWithNoAggregationSet) {
-			cubesCombo.addChoice(cube.getURI(), cube.getURI());
-		}
-
-		// Button to create slice
-		FButton createAggregationSet = new FButton("createAggregationSet",
-				"enable OLAP-like browsing") {
-			@Override
-			public void onClick() {
-				
-				Path currentRelativePath = Paths.get("");
-				String s = currentRelativePath.toAbsolutePath().toString();
-				System.out.println("Current relative path is: " + s);
-				
-				//Cube URI to enable OLAP-like browsing
-				String cubeURI = "<" + cubesCombo.getSelectedAsString().get(0)
-						+ ">";
-
-				//Get cube graph
-				String cubeGraph = CubeSPARQL.getCubeSliceGraph(cubeURI,
-						SPARQL_Service);
-
-				// Get Cube Structure graph
-				String cubeDSDGraph = CubeSPARQL.getCubeStructureGraph(cubeURI,
-						cubeGraph, SPARQL_Service);
-
-				// Get all Cube dimensions
-				List<LDResource> cubeDimensions = CubeSPARQL
-						.getDataCubeDimensions(cubeURI, cubeGraph,
-								cubeDSDGraph, SPARQL_Service);
-
-				// Get the Cube measure
-				List<String> cubeMeasure = CubeSPARQL.getDataCubeMeasure(
-						cubeURI, cubeGraph, cubeDSDGraph, SPARQL_Service);
-
-				//Create new aggregation set
-				String aggregationSetURI = AggregationSPARQL
-						.createNewAggregationSet(cubeDSDGraph, SPARQL_Service);
-				
-				//Attach original cube to aggregation set
-				AggregationSPARQL.attachCube2AggregationSet(aggregationSetURI,
-						cubeDSDGraph, cubeURI, SPARQL_Service);
-
-				OrderedPowerSet<LDResource> ops = new OrderedPowerSet<LDResource>(
-						(ArrayList<LDResource>) cubeDimensions);
-				
-				for (int j = 1; j < cubeDimensions.size(); j++) {
-					System.out.println("SIZE = " + j);
-
-					List<LinkedHashSet<LDResource>> perms = ops.getPermutationsList(j);
-					for (Set<LDResource> myset : perms) {
-						String st = "";
-						for (LDResource l : myset) {
-							st += l.getURI() + " ";
-						}
-						System.out.println(st);
-
-						String newCubeURI = AggregationSPARQL.createCubeForAggregationSet(myset,
-										cubeMeasure, cubeURI, cubeGraph,cubeDSDGraph,
-										aggregationSetURI,SPARQL_Service);
-						
-						System.out.println("NEW CUBE: " + newCubeURI);
-					}
-					System.out.println("----------");
-				}
-
-		
-				
-				FDialog.showMessage(this.getPage(), "OLAP-like browsing enabled",
-						"OLAP-Like browsing has been enabled for cube: "+
-								 cubesCombo.getSelectedAsString().get(0), "ok");
-
+			// populate cubes combo box
+			for (LDResource cube : cubesWithNoAggregationSet) {
+				cubesCombo.addChoice(cube.getURI(), cube.getURI());
 			}
-		};				
 
-		FLabel much_time = new FLabel("much_time",
-				"The process may take long depending on the cube's size");
-		
-		cnt.add(aggregation_label);
-		cnt.add(cubesCombo);
-		cnt.add(getNewLineComponent());
-		cnt.add(createAggregationSet);
-		cnt.add(getNewLineComponent());
-		cnt.add(much_time);
-		}else{
+			// Button to create aggregation set
+			FButton createAggregationSet = new FButton("createAggregationSet",
+					"enable OLAP-like browsing") {
+				@Override
+				public void onClick() {
+
+					// Cube URI to enable OLAP-like browsing
+					String cubeURI = "<"+ cubesCombo.getSelectedAsString().get(0) + ">";
+
+					// Get cube graph
+					String cubeGraph = CubeSPARQL.getCubeSliceGraph(cubeURI,SPARQL_Service);
+
+					// Get Cube Structure graph
+					String cubeDSDGraph = CubeSPARQL.getCubeStructureGraph(
+							cubeURI, cubeGraph, SPARQL_Service);
+
+					// Get all Cube dimensions
+					List<LDResource> cubeDimensions = CubeSPARQL
+							.getDataCubeDimensions(cubeURI, cubeGraph,
+									cubeDSDGraph, SPARQL_Service);
+
+					// Get the Cube measure
+					List<String> cubeMeasure = CubeSPARQL.getDataCubeMeasure(
+							cubeURI, cubeGraph, cubeDSDGraph, SPARQL_Service);
+
+					// Create new aggregation set
+					String aggregationSetURI = AggregationSPARQL
+							.createNewAggregationSet(cubeDSDGraph,SPARQL_Service);
+
+					// Attach original cube to aggregation set
+					AggregationSPARQL.attachCube2AggregationSet(
+							aggregationSetURI, cubeDSDGraph, cubeURI,
+							SPARQL_Service);
+					
+					OrderedPowerSet<LDResource> ops = new OrderedPowerSet<LDResource>(
+							(ArrayList<LDResource>) cubeDimensions);
+
+					//calculate all dimension combinations
+					for (int j = 1; j < cubeDimensions.size(); j++) {
+						System.out.println("SIZE = " + j);
+
+						List<LinkedHashSet<LDResource>> perms = ops.getPermutationsList(j);
+						for (Set<LDResource> myset : perms) {
+							String st = "";
+							for (LDResource l : myset) {
+								st += l.getURI() + " ";
+							}
+							System.out.println(st);
+
+							//create new cube of aggregation set
+							String newCubeURI = AggregationSPARQL
+									.createCubeForAggregationSet(myset,	cubeMeasure,
+											cubeURI, cubeGraph,	cubeDSDGraph, aggregationSetURI,
+											SPARQL_Service);
+
+							System.out.println("NEW CUBE: " + newCubeURI);
+						}
+						System.out.println("----------");
+					}
+
+					FDialog.showMessage(this.getPage(),
+							"OLAP-like browsing enabled",
+							"OLAP-Like browsing has been enabled for cube: "
+									+ cubesCombo.getSelectedAsString().get(0),"ok");
+
+				}
+			};
+
+			FLabel much_time = new FLabel("much_time",
+					"The process may take long depending on the cube's size");
+
+			cnt.add(aggregation_label);
+			cnt.add(cubesCombo);
+			cnt.add(getNewLineComponent());
+			cnt.add(createAggregationSet);
+			cnt.add(getNewLineComponent());
+			cnt.add(much_time);
+		} else {
 			FLabel noCubes4Aggregation = new FLabel("noCubes4Aggregation",
-					"<b>There are no available cube to enable OLAP-like browsing<b>");
+					"<b>There are no available cubes to enable OLAP-like browsing<b>");
 			cnt.add(noCubes4Aggregation);
-			
+
 		}
 		return cnt;
 
@@ -190,7 +191,7 @@ public class AggregationSetCreator extends
 		fhtml.setValue("<br><br>");
 		return fhtml;
 	}
-	
+
 	@Override
 	public String getTitle() {
 		return "Data Cube Browser widget";

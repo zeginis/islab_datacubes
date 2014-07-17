@@ -1,2 +1,4 @@
 DataCubeBrowser=org.certh.opencube.cubebrowser.DataCubeBrowser
 MapView=org.certh.opencube.mapview.MapView
+AggregationSetCreator=org.certh.opencube.aggregation.AggregationSetCreator
+SliceCreator=org.certh.opencube.slicing.SliceCreator

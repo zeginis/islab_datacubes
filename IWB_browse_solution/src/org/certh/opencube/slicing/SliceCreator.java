@@ -31,8 +31,9 @@ import com.fluidops.iwb.widget.config.WidgetBaseConfig;
  * = Test my demo widget =
  * 
  * <br/>
- * {{#widget: org.certh.opencube.aggregation.AggregationSetCreator
- *  }}
+ * {{#widget: org.certh.opencube.slicing.SliceCreator| 
+ *  dataCubeURI=<http://eurostat.linked-statistics.org/data/cens_hnctz> 
+ *  |asynch='true'|useCodeLists='true' |sparqlService='<http://localhost:3031/dcbrowser/query>'}}
  * 
  * </code>
  * 
@@ -45,12 +46,16 @@ public class SliceCreator extends AbstractWidget<SliceCreator.Config> {
 	// The left container to show the combo boxes with the visual dimensions
 	private FContainer rightcontainer = new FContainer("rightcontainer");
 
+	// The SPARQL service to get data (not required)
 	private String SPARQL_service;
 
+	// The cube URI to visualize (required)
 	private String cubeURI;
 
+	// True if code list will be used to get the cube dimension values
 	private boolean useCodeLists;
 
+	// The central container
 	private FContainer cnt;
 
 	// All the cube dimensions
@@ -159,7 +164,7 @@ public class SliceCreator extends AbstractWidget<SliceCreator.Config> {
 
 			leftcontainer.add(fixedDimensions_label);
 
-			// Show Aggregation set dimensions
+			// Show cube dimensions
 			for (LDResource dim : cubeDimensions) {
 
 				// IWB does not support too long IDs
@@ -168,7 +173,7 @@ public class SliceCreator extends AbstractWidget<SliceCreator.Config> {
 					checkBoxID = dim.getURIorLabel().substring(0, 10);
 				}
 
-				// show one check box for each aggregation set dimension
+				// show one check box for each cube dimension
 				FCheckBox dimCheckBox = new FCheckBox("dim_" + checkBoxID,
 						dim.getURIorLabel()) {
 
@@ -199,7 +204,7 @@ public class SliceCreator extends AbstractWidget<SliceCreator.Config> {
 						
 						rightcontainer.addAndRefresh(fixedDimValues_label);
 
-						// Tmp Selected values for the fixed dimensions
+						// Selected values for the fixed dimensions
 						fixedDimensionsSelectedValues = CubeHandlingUtils
 								.getFixedDimensionsRandomSelectedValues(
 										allDimensionsValues, fixedDimensions);
@@ -209,6 +214,7 @@ public class SliceCreator extends AbstractWidget<SliceCreator.Config> {
 					}
 				};
 
+				//All check boxes are not checked by default
 				dimCheckBox.setChecked(false);
 				mapDimURIcheckBox.put(dim, dimCheckBox);
 
@@ -243,7 +249,6 @@ public class SliceCreator extends AbstractWidget<SliceCreator.Config> {
 
 			// Add components to FGrid
 			farray.add(leftcontainer);
-									
 			farray.add(rightcontainer);
 			
 			fg.addRow(farray);
@@ -270,9 +275,11 @@ public class SliceCreator extends AbstractWidget<SliceCreator.Config> {
 						}
 					}
 					
+					//Get observations belonging to the slice
 					List<LDResource> sliceObservations=SliceSPARQL.getSliceObservations(
 							fixedDimensionsSelectedValues, cubeURI,cubeGraph, SPARQL_service);
 					
+					//create new slice
 					String sliceURI = SliceSPARQL.createCubeSlice(cubeURI, cubeGraph,
 							fixedDimensionsSelectedValues,	sliceObservations);
 					
@@ -285,6 +292,7 @@ public class SliceCreator extends AbstractWidget<SliceCreator.Config> {
 			cnt.add(fg);
 			cnt.add(createSlice);
 
+		//Not a valid cube URI
 		} else {
 
 			String uri = cubeURI.replaceAll("<", "");
