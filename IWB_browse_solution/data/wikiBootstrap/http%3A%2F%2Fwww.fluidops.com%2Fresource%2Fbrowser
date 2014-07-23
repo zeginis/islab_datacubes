@@ -1,5 +1,0 @@
-= Data Cube Browser =
-
-Browse the the content of an RDF Data Cube:
-
-{{#widget: DataCubeBrowser | labelText = 'Enter your name' }}

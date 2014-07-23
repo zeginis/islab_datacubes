@@ -1,6 +1,0 @@
-{{#widget:TableResult
-|query=
-'SELECT DISTINCT ?wine ?flavor ?maker
- WHERE { ?wine <http://www.w3.org/TR/2003/PR-owl-guide-20031209/wine#hasFlavor> ?flavor .
-         ?wine <http://www.w3.org/TR/2003/PR-owl-guide-20031209/wine#hasMaker> ?maker}'
-}}

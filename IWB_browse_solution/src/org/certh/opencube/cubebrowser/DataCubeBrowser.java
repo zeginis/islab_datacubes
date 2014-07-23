@@ -30,6 +30,7 @@ import com.fluidops.ajax.components.FTable.FilterPos;
 import com.fluidops.ajax.helper.HtmlString;
 import com.fluidops.ajax.models.FTableModel;
 import com.fluidops.iwb.model.ParameterConfigDoc;
+import com.fluidops.iwb.model.TypeConfigDoc;
 import com.fluidops.iwb.widget.AbstractWidget;
 import com.fluidops.iwb.widget.config.WidgetBaseConfig;
 import com.fluidops.util.Pair;
@@ -49,6 +50,9 @@ import com.fluidops.util.Pair;
  * </code>
  * 
  */
+
+@TypeConfigDoc("The OpenCube browser enables the exploration of an RDF Data Cube" +
+		" by presenting each time a two-dimensional slice of the cube as a table." )
 public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 
 	// The top container to show the check boxes with the available aggregation
@@ -371,7 +375,7 @@ public class DataCubeBrowser extends AbstractWidget<DataCubeBrowser.Config> {
 				} else {
 
 					FLabel notOLAP = new FLabel("notOLAP",
-							"<b>OLAP-like browsing is not supoorted for this cube<b>");
+							"<b>OLAP-like browsing is not supported for this cube<b>");
 					topcontainer.add(notOLAP);
 				}
 

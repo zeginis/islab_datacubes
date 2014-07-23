@@ -13,6 +13,7 @@ import org.certh.opencube.utils.LDResource;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResult;
+
 import com.fluidops.ajax.FClientUpdate;
 import com.fluidops.ajax.components.FComboBox;
 import com.fluidops.ajax.components.FComponent;
@@ -22,6 +23,7 @@ import com.fluidops.ajax.components.FHTML;
 import com.fluidops.ajax.components.FLabel;
 import com.fluidops.iwb.api.EndpointImpl;
 import com.fluidops.iwb.model.ParameterConfigDoc;
+import com.fluidops.iwb.model.TypeConfigDoc;
 import com.fluidops.iwb.widget.AbstractWidget;
 import com.fluidops.iwb.widget.config.WidgetBaseConfig;
 import com.google.common.collect.Lists;
@@ -40,7 +42,7 @@ import com.google.common.collect.Lists;
  * </code>
  * 
  */
-
+@TypeConfigDoc("The OpenCube Map View enables the visualization on a map of RDF data cubes based on their geospatial dimension." )
 public class MapView extends AbstractWidget<MapView.Config> {
 
 	//The URI of the cube
@@ -133,7 +135,7 @@ public class MapView extends AbstractWidget<MapView.Config> {
 		return Lists
 				.newArrayList(
 						cp + "//cdn.leafletjs.com/leaflet-0.7.3/leaflet.js",
-						cp + "/geostats/lib/geostats.js", 
+						cp + "//rawgit.com/simogeo/geostats/master/lib/geostats.js", 
 						cp + "//leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js",
 						cp + "//www.mapquestapi.com/sdk/leaflet/v1.0/mq-map.js?key=Fmjtd%7Cluur2d0znu%2Cbl%3Do5-9a82dw",
 						cp + "//www.mapquestapi.com/sdk/leaflet/v1.0/mq-geocoding.js?key=Fmjtd%7Cluur2d0znu%2Cbl%3Do5-9a82dw");
@@ -228,7 +230,7 @@ public class MapView extends AbstractWidget<MapView.Config> {
 				// Add the types of the supported visualizations
 				visualizations.add(0, "Visualization type");
 				visualizations.add(1, "Markers map");
-				visualizations.add(2, "Bubbles map");
+				visualizations.add(2, "Bubble map");
 				visualizations.add(3, "Heat map");
 				visualizations.add(4, "Choropleth map");
 		
@@ -342,7 +344,7 @@ public class MapView extends AbstractWidget<MapView.Config> {
 							addClientUpdate(update);
 							cnt.initializeView();
 						} else if (this.getSelectedAsString().toString()
-								.equals("[Bubbles map]")) {
+								.equals("[Bubble map]")) {
 							javascript = getBubbleJavascript(geovalues,
 									measurevalues, newvalues, attributeValues,
 									cubeAttributes.size(), geo_label, attr_labels);
@@ -534,7 +536,7 @@ public class MapView extends AbstractWidget<MapView.Config> {
 								
 								}
 								if (vistypes.getSelectedAsString().toString()
-										.contains("Bubbles")) {
+										.contains("Bubble")) {
 									String javascript = getBubbleJavascript(geovalues,
 											measurevalues, newvalues, attributeValues,
 											cubeAttributes.size(), geo_label,
@@ -1173,8 +1175,8 @@ public class MapView extends AbstractWidget<MapView.Config> {
 					 	"if(props && arr[k] == props.name){"+
 					 		"var observations= observ[k]; ";
 					for (int j = 0; j < cubeAttributesSize; j++) {
-								choroplethmap += "observations += attr_labels2["+j+"];"+
-												 "observations +=': ';"+
+								choroplethmap += "observations += '<b>'+attr_labels2["+j+"];"+
+												 "observations +=': </b>';"+
 												 "observations+= attribute"+j+"[k];}";
 					}
 					choroplethmap += "if(!observations)"+

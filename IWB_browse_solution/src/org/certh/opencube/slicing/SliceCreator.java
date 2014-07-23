@@ -21,6 +21,7 @@ import com.fluidops.ajax.components.FGrid;
 import com.fluidops.ajax.components.FHTML;
 import com.fluidops.ajax.components.FLabel;
 import com.fluidops.iwb.model.ParameterConfigDoc;
+import com.fluidops.iwb.model.TypeConfigDoc;
 import com.fluidops.iwb.widget.AbstractWidget;
 import com.fluidops.iwb.widget.config.WidgetBaseConfig;
 
@@ -38,6 +39,9 @@ import com.fluidops.iwb.widget.config.WidgetBaseConfig;
  * </code>
  * 
  */
+
+@TypeConfigDoc("The OpenCube Slice creator enables the creation of slices of data cubes" +
+		"by selecting the fixed cube dimensions." )
 public class SliceCreator extends AbstractWidget<SliceCreator.Config> {
 
 	// The left container to show the combo boxes with the visual dimensions

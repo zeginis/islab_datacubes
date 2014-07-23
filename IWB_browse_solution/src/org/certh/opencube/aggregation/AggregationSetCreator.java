@@ -18,6 +18,7 @@ import com.fluidops.ajax.components.FDialog;
 import com.fluidops.ajax.components.FHTML;
 import com.fluidops.ajax.components.FLabel;
 import com.fluidops.iwb.model.ParameterConfigDoc;
+import com.fluidops.iwb.model.TypeConfigDoc;
 import com.fluidops.iwb.widget.AbstractWidget;
 import com.fluidops.iwb.widget.config.WidgetBaseConfig;
 
@@ -35,6 +36,9 @@ import com.fluidops.iwb.widget.config.WidgetBaseConfig;
  * </code>
  * 
  */
+
+@TypeConfigDoc("The OpenCube Aggregation Set creator activates the OLAP-like browsing of " +
+		"an existing data cube by creating the corresponding aggrgated data cubes.")
 public class AggregationSetCreator extends
 		AbstractWidget<AggregationSetCreator.Config> {
 
