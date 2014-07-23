@@ -1,0 +1,68 @@
+=== MapView Widget ===
+
+{{#widget: com.fluidops.iwb.widget.DisplayConfigurationWidget
+| clazz = org.certh.opencube.mapview.MapView
+| type = 'DESCRIPTION'
+}}
+
+==== Configuration Settings ====
+
+{{#widget: com.fluidops.iwb.widget.DisplayConfigurationWidget
+| clazz = org.certh.opencube.mapview.MapView
+}}
+
+==== MapView Examples ====
+===== Creation of MapView widget =====
+<source>
+
+{{#widget: org.certh.opencube.mapview.MapView
+| dataCubeURI= '<http://eurostat.linked-statistics.org/data/acf_d_rea>' 
+|sparqlService= '<http://195.251.218.39:3032/dataset/sparql>'
+}}
+</source>
+
+Initially the OpenCube MapView presents to the user the supported types of visualization (including markers, bubbles, heat maps and choropleth maps) along with all the dimensions (except the geospatial one) and their values in dropdown lists.
+
+<img src="/images/help/MapView/mapcreation.JPG" width=800px"/>
+
+Depending on the selection regarding the type of visualization to be presented, a map appears that actually visualizes a slice of the cube where the geospatial dimension is free and the other dimensions are randomly fixed.
+
+===== Markers Map =====
+The creation of a Markers Map is realized by choosing the "Markers Map" selection in the drop down list.
+Each marker represents the observation value for a specific geographic location for a combination of dimension restrictions selected using the combo boxes. 
+Clicking on a marker will present a popup showing the labels and the values of the corresponding observation’s geospatial dimension, non-geospatial dimensions, attributes and measure.
+
+<img src="/images/help/MapView/markers_map.JPG" width=800px"/>
+
+===== Bubble Map =====
+
+The creation of a Bubbles Map is realized by choosing the "Bubbles Map" selection in the drop down list.
+Each bubble represents the observation value for a specific geographic location for a combination of dimension restrictions selected using the combo boxes. The radius of the bubble indicates the value of the observation's measure. 
+Clicking on a bubble will present a popup showing the labels and the values of the corresponding observation’s geospatial dimension, non-geospatial dimensions, attributes and measure.
+
+<img src="/images/help/MapView/bubbles_map.jpg" width=800px"/>
+
+===== Heat map =====
+
+The creation of a Heat map is realized by choosing the "Heat map" selection in the drop down list.
+Each bubble represents the observation value for a specific geographic location for a combination of dimension restrictions selected using the combo boxes. The size of the bubble indicates the value of the observation's measure.
+
+<img src="/images/help/MapView/heatmap.jpg" width=800px"/>
+
+===== Choropleth map =====
+
+The creation of a Choropleth map is realized by choosing the "Choropleth map" selection in the drop down list.
+Each location available in the dataset is represented as a polygon in the visualized map. 
+The polygon changes color density depending on observation's measure value. 
+Hovering on each polygon will present a popup showing the labels and the values of the corresponding observation’s geospatial dimension, non-geospatial dimensions, attributes and measure.
+
+<img src="/images/help/MapView/choropleth_map.jpg" width=800px"/>
+
+===== Map configuration =====
+
+The selection of different values of a non-geospatial (fixed) dimension in one or more drop down lists causes the map to reload and show the different slice of the cube. 
+The following screenshot visualizes the map containing different fixed dimension values for the "Classification of economic activities" and time dimensions.
+
+<img src="/images/help/MapView/change_values.jpg" width=800px"/>
+
+

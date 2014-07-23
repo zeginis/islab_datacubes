@@ -1,0 +1,2 @@
+{{#widget: org.certh.opencube.slicing.SliceCreator| dataCubeURI=<http://eurostat.linked-statistics.org/data/cens_hnctz> |asynch='true'|useCodeLists='true'
+}}

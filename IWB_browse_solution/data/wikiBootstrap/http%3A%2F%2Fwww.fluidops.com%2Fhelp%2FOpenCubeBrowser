@@ -1,0 +1,56 @@
+=== OpenCube Browser Widget ===
+
+{{#widget: com.fluidops.iwb.widget.DisplayConfigurationWidget
+| clazz = org.certh.opencube.cubebrowser.DataCubeBrowser
+| type = 'DESCRIPTION'
+}}
+
+==== Configuration Settings ====
+
+{{#widget: com.fluidops.iwb.widget.DisplayConfigurationWidget
+| clazz =  org.certh.opencube.cubebrowser.DataCubeBrowser
+}}
+
+==== Creation of MapView widget ====
+<source>
+
+{{#widget: org.certh.opencube.cubebrowser.DataCubeBrowser|
+ dataCubeURI= '<http://eurostat.linked-statistics.org/data/cens_hnctz>'|
+asynch='true'|
+useCodeLists='true'
+}}
+
+</source>
+
+Currently the OpenCube Browser supports the following functionalities:
+* The OpenCube Browser presents in a table the values of a two-dimensional slice of an RDF data cube. The user can change the number of rows of the table (by default the browser presents 20 rows per page).
+* The user can change the 2 dimensions that define the table of the browser.
+* The user can change the values of the fixed dimensions and thus select a different slice to be presented.
+* The user can perform roll-up and drill-down OLAP operations through dimensions reduction and insertion respectively. The user can add or remove the dimensions of the cube to browse. This functionality is supported only for cubes having at least one “countable” measure.
+* The user can create and store a two-dimensional slice of the cube based on the data presented in the browser. 
+
+Initially the OpenCube browser defines and presents a two-dimensional slice of the cube in the following way:
+* It assumes that all the dimensions of the cube will be included in the browser.
+* It selects the largest dimension as rows dimension.
+* It randomly selects the columns dimension.
+* It sets a fixed value for each of the other dimensions (the first value as it appears).
+* It randomly selects one measure (in the case of cubes having multiple measure). 
+
+The following figure depicts the interface of the OpenCube browser.
+
+<img src="/images/help/OpenCubeBrowser/opencubeBrowser.jpg" width=800px"/>
+
+==== Dimension Reduction ====
+
+The OpenCube Browser enables the reduction of the data cube dimensions to visualise. In the follwong figure OpenCube browser presents the same cube but this time only three out of the five dimensions were selected to browse. The observations were aggregated across the two “missing” dimensions. In addition the user can now select between the three remaining dimensions in order (a) to define the table of the browser and (b) set the values of the fixed dimensions
+
+<img src="/images/help/OpenCubeBrowser/opencubeBrowser_aggregation.jpg" width=800px"/>
+
+
+==== Slice creation ====
+
+The Slicing component enables the creation and modelling of a slice of a cube according to the RDF data cube vocabulary. It also stores the produced slice in the RDF store. The Slicing component is called through the OpenCube Browser by clicking on the “Create Slice” button. The follwoing figure presents the response in the OpenCube Browser after calling the Slicing Component. In particular, the URI of the new slice is presented to the user.
+
+<img src="/images/help/OpenCubeBrowser/newslice.jpg" width=800px"/>
+
+

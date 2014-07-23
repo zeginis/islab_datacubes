@@ -1,0 +1,4 @@
+==OpenCube Map View==
+{{#widget: org.certh.opencube.mapview.MapView| dataCubeURI= '<http://eurostat.linked-statistics.org/data/acf_d_rea>' |useCodeLists=true|asynch='true'}}
+
+

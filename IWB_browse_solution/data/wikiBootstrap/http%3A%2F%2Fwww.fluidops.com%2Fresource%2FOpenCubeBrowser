@@ -1,0 +1,8 @@
+=OpenCube Browser=
+
+The OpenCube browser enables the exploration of an RDF Data Cube by presenting each time a two-dimensional slice of the cube as a table.
+
+{{#widget: org.certh.opencube.cubebrowser.DataCubeBrowser| dataCubeURI= '<http://eurostat.linked-statistics.org/data/cens_hnctz>'|asynch='true'|useCodeLists='true'
+}}
+
+
