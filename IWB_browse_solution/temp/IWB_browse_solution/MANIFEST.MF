@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.8.2
+Created-By: 1.7.0_45-b18 (Oracle Corporation)
+project: IWB_browse_solution
+ProductName: IWB_browse_solution
+ProductLongName: IWB_browse_solution for Information Workbench
+ProductVersion: 0.1
+version: 0.1
+ProductContact: n/a
+CompanyName: n/a
+date: 2014-07-22_06:29:22
+
